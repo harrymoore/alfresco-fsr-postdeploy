@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE beans PUBLIC '-//SPRING//DTD BEAN//EN' 'http://www.springframework.org/dtd/spring-beans.dtd'>
+<!--  DEPLOYMENT SERVER CONFIGURATION - Sample Target used for tests -->
+
+<beans>
+
+  <bean id="TEST-TARGET-1-FileCopy-PostDeploy" class="com.ixxus.alfresco.deploy.CopyFiles">
+      <property name="dryRun">
+          <!-- don't perform file copy. just log what "should" be done -->
+          <value>true</value>
+      </property>
+      <property name="targetPath">
+          <!-- root folder to copy files to. the directory must already exist and be writable to the user of the fsr process
+           Be careful here! the process will write to this folder and overwrite files. if you point to the wrong place
+           and run as root you can do serious damage. try running with dryRun=true to test and watch the log file
+           -->
+          <value>/tmp/post-deploy-test/target</value>
+      </property>
+      <property name="deploymentBasePath">
+          <!-- this MUST match the rootDirectory setting in the target bean -->
+          <value>/tmp/post-deploy-test/source</value>
+      </property>
+  </bean>
+  	
+	<bean
+		class="org.alfresco.deployment.impl.server.DeploymentTargetRegistrationBean"
+		init-method="register">
+
+		<!--  Your target name goes here -->
+		<property name="name">
+			<value>post-deploy-test-target</value>
+		</property>
+	
+		<property name="registry">
+			<ref bean="deploymentReceiverEngine" />
+		</property>
+		<property name="target">
+			<bean
+				class="org.alfresco.deployment.impl.fsr.FileSystemDeploymentTarget"
+				init-method="init">
+				
+				<!--  where do you want your files to go -->
+				<property name="rootDirectory">
+					<value>/tmp/post-deploy-test/source</value>
+				</property>
+				
+				<!--  where to store meta data for sampleTarget-->
+    		<property name="metaDataDirectory">
+        		<value>${deployment.filesystem.metadatadir}/post-deploy-test-target</value>
+    		</property>	
+				
+				<property name="autoFix">
+					<value>true</value>
+				</property>
+				
+				<!--  Add your prepare callbacks here -->
+				<property name="prepare">
+					<list>
+						<bean class="org.alfresco.deployment.SampleRunnable" />
+					</list>
+				</property>
+				
+				<!--  Add your postCommit callbacks here -->
+				<property name="postCommit">
+					<list>
+            <ref bean="TEST-TARGET-1-FileCopy-PostDeploy"/>
+					</list>
+				</property>
+				
+				<property name="fileSystemReceiverService">
+					<ref bean="fileSystemReceiverService" />
+				</property>
+				
+				<!--  How should access to this target be controlled ? -->
+				<property name="authenticator">
+					<bean
+						class="org.alfresco.deployment.impl.server.DeploymentReceiverAuthenticatorSimple">
+						<property name="user">
+							<value>admin</value>
+						</property>
+						<property name="password">
+							<value>admin</value>
+						</property>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>	
+</beans>
