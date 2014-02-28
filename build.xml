@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<project name="Install" default="message">
+    <!--
+    Install post deploy jar and dependencies
+    -->
+    <property name="project.dir" value="${basedir}" />
+
+    <property name="build.properties.file" value="hbsp-hed-postdeploy.properties" />
+    <property name="env" environment="env" value="" />
+    <property file="${env.HOMEDRIVE}/${env.HOMEPATH}/${build.properties.file}" />
+    <property file="${env.HOME}/${build.properties.file}" />
+    <property file="${build.properties.file}" />
+
+    <property name="alfresco.deploy.dir" location="/projects/alfresco/alfresco-enterprise-deployment-4.1.4" />
+
+    <target name="message">
+        <echo>Run ant target "deploy" to build and then copy files to ${alfresco.deploy.dir}</echo>
+    </target>
+
+    <target name="build" description="Run maven build">
+        <echo>Running maven build</echo>
+        <exec dir="${project.dir}" executable="sh">
+            <arg value="/usr/local/bin/mvn"/>
+            <arg line="clean package" />
+        </exec>
+    </target>
+
+    <target name="deploy" depends="">
+        <copy todir="${alfresco.deploy.dir}" overwrite="yes" preservelastmodified="yes" verbose="yes">
+            <fileset dir="${project.dir}/resources" casesensitive="no">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+        <copy todir="${alfresco.deploy.dir}" overwrite="yes" preservelastmodified="yes" verbose="yes">
+            <fileset dir="${project.dir}/target" casesensitive="no">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="restart" description="restart deployment receiver">
+        <exec dir="${alfresco.deploy.dir}" executable="sh">
+            <arg value="deploy_stop.sh"/>
+        </exec>
+        <exec dir="${alfresco.deploy.dir}" executable="sh">
+            <arg value="deploy_start.sh"/>
+        </exec>
+    </target>
+</project>
